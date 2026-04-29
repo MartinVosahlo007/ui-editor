@@ -1,0 +1,28 @@
+import { iconPaths, type IconName } from "./icons";
+
+interface IconProps {
+  name: IconName | string;
+  size?: number;
+  className?: string;
+}
+
+export function Icon({ name, size = 16, className = "" }: IconProps) {
+  const path = iconPaths[name as IconName] ?? iconPaths.boxes;
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d={path} />
+    </svg>
+  );
+}
