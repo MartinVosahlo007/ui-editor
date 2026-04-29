@@ -1,4 +1,5 @@
 import type { CanvasElement, CanvasElementId } from "../../domain/canvas/canvas.types";
+import type { AlignCommand } from "../../features/editor/useEditorController";
 import { Button } from "../shared/Button";
 import { Icon } from "../shared/Icon";
 import { Canvas } from "../canvas/Canvas";
@@ -14,6 +15,7 @@ interface CanvasWorkspaceProps {
   onInteractionStart: () => void;
   onMoveElement: (id: CanvasElementId, x: number, y: number) => void;
   onResizeElement: (id: CanvasElementId, width: number, height: number) => void;
+  onAlign: (command: AlignCommand) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
 }
@@ -29,6 +31,7 @@ export function CanvasWorkspace({
   onInteractionStart,
   onMoveElement,
   onResizeElement,
+  onAlign,
   onZoomIn,
   onZoomOut,
 }: CanvasWorkspaceProps) {
@@ -40,9 +43,29 @@ export function CanvasWorkspace({
           Select
         </Button>
 
-        <Button title="Připravené místo pro align commands">
+        <Button title="Align left" onClick={() => onAlign("left")}>
           <Icon name="align" size={14} />
-          Align
+          Left
+        </Button>
+
+        <Button title="Align center horizontally" onClick={() => onAlign("centerX")}>
+          Center
+        </Button>
+
+        <Button title="Align right" onClick={() => onAlign("right")}>
+          Right
+        </Button>
+
+        <Button title="Align top" onClick={() => onAlign("top")}>
+          Top
+        </Button>
+
+        <Button title="Align middle vertically" onClick={() => onAlign("middleY")}>
+          Middle
+        </Button>
+
+        <Button title="Align bottom" onClick={() => onAlign("bottom")}>
+          Bottom
         </Button>
 
         <Button onClick={onZoomOut}>-</Button>

@@ -1,5 +1,7 @@
+import { useRef, type ChangeEvent } from "react";
 import { Button } from "../shared/Button";
 import { Icon } from "../shared/Icon";
+import { StatusMessage, type StatusMessageValue } from "../shared/StatusMessage";
 
 interface HeaderBarProps {
   canUndo: boolean;
@@ -7,12 +9,16 @@ interface HeaderBarProps {
   showGrid: boolean;
   preview: boolean;
   lastSavedAt: string | null;
+  statusMessage: StatusMessageValue | null;
   onUndo: () => void;
   onRedo: () => void;
+  onDuplicate: () => void;
   onToggleGrid: () => void;
   onTogglePreview: () => void;
   onExportJson: () => void;
+  onImportJson: (file: File) => Promise<void>;
   onSave: () => void;
+  onReset: () => void;
 }
 
 function formatSavedAt(lastSavedAt: string | null): string {
@@ -31,13 +37,25 @@ export function HeaderBar({
   showGrid,
   preview,
   lastSavedAt,
+  statusMessage,
   onUndo,
   onRedo,
+  onDuplicate,
   onToggleGrid,
   onTogglePreview,
   onExportJson,
+  onImportJson,
   onSave,
+  onReset,
 }: HeaderBarProps) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleImportFile = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) void onImportJson(file);
+    event.target.value = "";
+  };
+
   return (
     <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm">
       <div className="flex items-center gap-3">
@@ -52,6 +70,8 @@ export function HeaderBar({
       </div>
 
       <div className="flex items-center gap-2">
+        <StatusMessage message={statusMessage} />
+
         {lastSavedAt && <span className="mr-1 text-[11px] text-slate-400">Uloženo {formatSavedAt(lastSavedAt)}</span>}
 
         <Button onClick={onUndo} title="Undo" disabled={!canUndo}>
@@ -62,6 +82,11 @@ export function HeaderBar({
         <Button onClick={onRedo} title="Redo" disabled={!canRedo}>
           <Icon name="redo" size={14} />
           Redo
+        </Button>
+
+        <Button onClick={onDuplicate} title="Duplicate">
+          <Icon name="plus" size={14} />
+          Duplicate
         </Button>
 
         <Button active={showGrid} onClick={onToggleGrid}>
@@ -79,9 +104,26 @@ export function HeaderBar({
           Export JSON
         </Button>
 
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          onChange={handleImportFile}
+          className="hidden"
+        />
+
+        <Button onClick={() => fileInputRef.current?.click()}>
+          <Icon name="upload" size={14} />
+          Import
+        </Button>
+
         <Button onClick={onSave}>
           <Icon name="save" size={14} />
           Save
+        </Button>
+
+        <Button onClick={onReset} variant="danger">
+          Reset
         </Button>
       </div>
     </header>

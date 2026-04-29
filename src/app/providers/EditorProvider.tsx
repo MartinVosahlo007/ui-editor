@@ -18,11 +18,15 @@ const EditorContext = createContext<EditorController | null>(null);
 
 function createBootState() {
   const savedDocument = loadEditorDocument();
-
-  return createInitialEditorState(
+  const state = createInitialEditorState(
     savedDocument?.elements ?? createElementsFromTemplate("erpList"),
     savedDocument?.selectedId ?? null
   );
+
+  return {
+    ...state,
+    lastSavedAt: savedDocument?.savedAt ?? null,
+  };
 }
 
 export function EditorProvider({ children }: PropsWithChildren) {
@@ -36,6 +40,8 @@ export function EditorProvider({ children }: PropsWithChildren) {
       undo: controller.actions.undo,
       redo: controller.actions.redo,
       deleteSelectedElement: controller.actions.deleteSelectedElement,
+      duplicateSelectedElement: controller.actions.duplicateSelectedElement,
+      nudgeSelectedElement: controller.actions.nudgeSelectedElement,
     },
   });
 

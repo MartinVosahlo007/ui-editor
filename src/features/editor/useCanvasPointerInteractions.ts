@@ -5,6 +5,7 @@ import {
   MIN_ELEMENT_WIDTH,
 } from "../../domain/canvas/canvas.constants";
 import { snapToGrid } from "../../domain/canvas/canvas.helpers";
+import { clampElementGeometry } from "../../domain/canvas/geometry.helpers";
 import type { CanvasElement, CanvasElementId } from "../../domain/canvas/canvas.types";
 
 interface UseCanvasPointerInteractionsOptions {
@@ -60,18 +61,34 @@ export function useCanvasPointerInteractions({
 
         event.stopPropagation();
         onSelect(element.id);
-        onInteractionStart();
 
         const startX = event.clientX;
         const startY = event.clientY;
         const originX = element.x;
         const originY = element.y;
+        let historyCaptured = false;
+        let lastX = element.x;
+        let lastY = element.y;
 
         registerWindowListeners((moveEvent) => {
           const deltaX = (moveEvent.clientX - startX) / zoom;
           const deltaY = (moveEvent.clientY - startY) / zoom;
+          const next = clampElementGeometry({
+            ...element,
+            x: snapToGrid(originX + deltaX),
+            y: snapToGrid(originY + deltaY),
+          });
 
-          onMove(element.id, snapToGrid(originX + deltaX), snapToGrid(originY + deltaY));
+          if (next.x === lastX && next.y === lastY) return;
+
+          if (!historyCaptured) {
+            onInteractionStart();
+            historyCaptured = true;
+          }
+
+          onMove(element.id, next.x, next.y);
+          lastX = next.x;
+          lastY = next.y;
         });
       },
     [onInteractionStart, onMove, onSelect, preview, registerWindowListeners, zoom]
@@ -84,22 +101,34 @@ export function useCanvasPointerInteractions({
 
         event.stopPropagation();
         onSelect(element.id);
-        onInteractionStart();
 
         const startX = event.clientX;
         const startY = event.clientY;
         const originWidth = element.w;
         const originHeight = element.h;
+        let historyCaptured = false;
+        let lastWidth = element.w;
+        let lastHeight = element.h;
 
         registerWindowListeners((moveEvent) => {
           const deltaWidth = (moveEvent.clientX - startX) / zoom;
           const deltaHeight = (moveEvent.clientY - startY) / zoom;
+          const next = clampElementGeometry({
+            ...element,
+            w: Math.max(MIN_ELEMENT_WIDTH, snapToGrid(originWidth + deltaWidth)),
+            h: Math.max(MIN_ELEMENT_HEIGHT, snapToGrid(originHeight + deltaHeight)),
+          });
 
-          onResize(
-            element.id,
-            Math.max(MIN_ELEMENT_WIDTH, snapToGrid(originWidth + deltaWidth)),
-            Math.max(MIN_ELEMENT_HEIGHT, snapToGrid(originHeight + deltaHeight))
-          );
+          if (next.w === lastWidth && next.h === lastHeight) return;
+
+          if (!historyCaptured) {
+            onInteractionStart();
+            historyCaptured = true;
+          }
+
+          onResize(element.id, next.w, next.h);
+          lastWidth = next.w;
+          lastHeight = next.h;
         });
       },
     [onInteractionStart, onResize, onSelect, preview, registerWindowListeners, zoom]

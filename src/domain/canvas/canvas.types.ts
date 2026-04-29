@@ -49,6 +49,7 @@ export type EditorAction =
   | { type: "ADD_ELEMENT"; element: CanvasElement }
   | { type: "APPLY_TEMPLATE"; elements: CanvasElement[] }
   | { type: "SELECT_ELEMENT"; id: CanvasElementId | null }
+  | { type: "DUPLICATE_ELEMENT"; id: CanvasElementId }
   | {
       type: "UPDATE_ELEMENT";
       id: CanvasElementId;
@@ -69,5 +70,5 @@ export type EditorAction =
   | { type: "TOGGLE_GRID" }
   | { type: "TOGGLE_PREVIEW" }
   | { type: "MARK_SAVED"; savedAt: string }
-  | { type: "LOAD_DOCUMENT"; elements: CanvasElement[]; selectedId?: CanvasElementId | null }
+  | { type: "LOAD_DOCUMENT"; elements: CanvasElement[]; selectedId?: CanvasElementId | null; savedAt?: string | null }
   | { type: "RESET"; elements: CanvasElement[] };

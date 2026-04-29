@@ -2,6 +2,8 @@ import {
   DEFAULT_ZOOM,
   MAX_HISTORY_ITEMS,
 } from "./canvas.constants";
+import { duplicateElement } from "./canvas.commands";
+import { clampElementGeometry } from "./geometry.helpers";
 import type {
   CanvasElement,
   CanvasElementId,
@@ -39,7 +41,7 @@ export function createInitialEditorState(
   selectedId: CanvasElementId | null = null
 ): EditorState {
   return {
-    elements,
+    elements: elements.map(clampElementGeometry),
     selectedId,
     zoom: DEFAULT_ZOOM,
     showGrid: true,
@@ -56,10 +58,11 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
   switch (action.type) {
     case "ADD_ELEMENT": {
       const next = withHistory(state);
+      const element = clampElementGeometry(action.element);
       return {
         ...next,
-        elements: [...state.elements, action.element],
-        selectedId: action.element.id,
+        elements: [...state.elements, element],
+        selectedId: element.id,
       };
     }
 
@@ -67,7 +70,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       const next = withHistory(state);
       return {
         ...next,
-        elements: action.elements,
+        elements: action.elements.map(clampElementGeometry),
         selectedId: null,
       };
     }
@@ -84,7 +87,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       return {
         ...base,
         elements: state.elements.map((element) =>
-          element.id === action.id ? { ...element, ...action.patch } : element
+          element.id === action.id ? clampElementGeometry({ ...element, ...action.patch }) : element
         ),
       };
     }
@@ -105,6 +108,20 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
               }
             : element
         ),
+      };
+    }
+
+    case "DUPLICATE_ELEMENT": {
+      const source = state.elements.find((element) => element.id === action.id);
+      if (!source) return state;
+
+      const next = withHistory(state);
+      const copy = duplicateElement(source);
+
+      return {
+        ...next,
+        elements: [...state.elements, copy],
+        selectedId: copy.id,
       };
     }
 
@@ -177,8 +194,9 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case "LOAD_DOCUMENT":
       return {
         ...state,
-        elements: action.elements,
+        elements: action.elements.map(clampElementGeometry),
         selectedId: action.selectedId ?? null,
+        lastSavedAt: action.savedAt ?? null,
         history: {
           past: [],
           future: [],

@@ -28,12 +28,16 @@ export function EditorShell({ controller }: EditorShellProps) {
         showGrid={state.showGrid}
         preview={state.preview}
         lastSavedAt={state.lastSavedAt}
+        statusMessage={controller.statusMessage}
         onUndo={actions.undo}
         onRedo={actions.redo}
+        onDuplicate={actions.duplicateSelectedElement}
         onToggleGrid={actions.toggleGrid}
         onTogglePreview={actions.togglePreview}
         onExportJson={actions.exportJson}
+        onImportJson={actions.importJson}
         onSave={actions.save}
+        onReset={actions.reset}
       />
 
       <main className="grid h-[calc(100vh-56px)] grid-cols-[300px_1fr_340px] gap-0">
@@ -55,6 +59,7 @@ export function EditorShell({ controller }: EditorShellProps) {
           onInteractionStart={actions.captureHistory}
           onMoveElement={(id, x, y) => actions.updateElement(id, { x, y }, { trackHistory: false })}
           onResizeElement={(id, w, h) => actions.updateElement(id, { w, h }, { trackHistory: false })}
+          onAlign={actions.alignSelectedElement}
           onZoomIn={actions.zoomIn}
           onZoomOut={actions.zoomOut}
         />

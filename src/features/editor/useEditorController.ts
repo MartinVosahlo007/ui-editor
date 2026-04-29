@@ -1,7 +1,8 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Dispatch } from "react";
 import { clampZoom } from "../../domain/canvas/canvas.helpers";
 import { createElementFromPaletteItem } from "../../domain/canvas/canvas.commands";
+import { CANVAS_CONTENT_BOUNDS, clampElementGeometry } from "../../domain/canvas/geometry.helpers";
 import {
   selectCanRedo,
   selectCanUndo,
@@ -20,7 +21,11 @@ import { TEMPLATE_DEFINITIONS } from "../../domain/templates/template.data";
 import { createElementsFromTemplate } from "../../domain/templates/template.factory";
 import type { TemplateKey } from "../../domain/templates/template.types";
 import { exportEditorJson } from "../export/exportJson";
+import { importEditorJson } from "../import/importJson";
 import { saveEditorDocument } from "../persistence/editorStorage";
+import type { StatusMessageValue } from "../../ui/shared/StatusMessage";
+
+export type AlignCommand = "left" | "centerX" | "right" | "top" | "middleY" | "bottom";
 
 export interface EditorActions {
   addPaletteItem: (item: PaletteItem) => void;
@@ -39,6 +44,9 @@ export interface EditorActions {
   ) => void;
   deleteElement: (id: CanvasElementId) => void;
   deleteSelectedElement: () => void;
+  duplicateSelectedElement: () => void;
+  nudgeSelectedElement: (deltaX: number, deltaY: number) => void;
+  alignSelectedElement: (command: AlignCommand) => void;
   captureHistory: () => void;
   undo: () => void;
   redo: () => void;
@@ -48,6 +56,7 @@ export interface EditorActions {
   toggleGrid: () => void;
   togglePreview: () => void;
   exportJson: () => void;
+  importJson: (file: File) => Promise<void>;
   save: () => void;
   reset: () => void;
 }
@@ -59,6 +68,7 @@ export interface EditorController {
   canRedo: boolean;
   paletteGroups: typeof PALETTE_GROUPS;
   templates: typeof TEMPLATE_DEFINITIONS;
+  statusMessage: StatusMessageValue | null;
   actions: EditorActions;
 }
 
@@ -69,6 +79,22 @@ export function useEditorController(
   const selectedElement = selectSelectedElement(state);
   const canUndo = selectCanUndo(state);
   const canRedo = selectCanRedo(state);
+  const [statusMessage, setStatusMessage] = useState<StatusMessageValue | null>(null);
+
+  const setTimedStatus = useCallback((message: StatusMessageValue) => {
+    setStatusMessage(message);
+  }, []);
+
+  useEffect(() => {
+    if (!statusMessage) return;
+
+    const timeout = window.setTimeout(
+      () => setStatusMessage(null),
+      statusMessage.tone === "error" ? 5000 : 3000
+    );
+
+    return () => window.clearTimeout(timeout);
+  }, [statusMessage]);
 
   const addPaletteItem = useCallback(
     (item: PaletteItem) => {
@@ -122,6 +148,50 @@ export function useEditorController(
     dispatch({ type: "DELETE_ELEMENT", id: state.selectedId });
   }, [dispatch, state.selectedId]);
 
+  const duplicateSelectedElement = useCallback(() => {
+    if (!state.selectedId) return;
+    dispatch({ type: "DUPLICATE_ELEMENT", id: state.selectedId });
+    setTimedStatus({ tone: "success", text: "Komponenta duplikována" });
+  }, [dispatch, setTimedStatus, state.selectedId]);
+
+  const nudgeSelectedElement = useCallback(
+    (deltaX: number, deltaY: number) => {
+      if (!selectedElement) return;
+
+      const next = clampElementGeometry({
+        ...selectedElement,
+        x: selectedElement.x + deltaX,
+        y: selectedElement.y + deltaY,
+      });
+
+      dispatch({
+        type: "UPDATE_ELEMENT",
+        id: selectedElement.id,
+        patch: { x: next.x, y: next.y },
+      });
+    },
+    [dispatch, selectedElement]
+  );
+
+  const alignSelectedElement = useCallback(
+    (command: AlignCommand) => {
+      if (!selectedElement) return;
+
+      const patch: CanvasElementPatch = {};
+
+      if (command === "left") patch.x = 0;
+      if (command === "centerX") patch.x = Math.round((CANVAS_CONTENT_BOUNDS.w - selectedElement.w) / 2);
+      if (command === "right") patch.x = CANVAS_CONTENT_BOUNDS.w - selectedElement.w;
+      if (command === "top") patch.y = 0;
+      if (command === "middleY") patch.y = Math.round((CANVAS_CONTENT_BOUNDS.h - selectedElement.h) / 2);
+      if (command === "bottom") patch.y = CANVAS_CONTENT_BOUNDS.h - selectedElement.h;
+
+      dispatch({ type: "UPDATE_ELEMENT", id: selectedElement.id, patch });
+      setTimedStatus({ tone: "success", text: "Zarovnáno" });
+    },
+    [dispatch, selectedElement, setTimedStatus]
+  );
+
   const captureHistory = useCallback(() => dispatch({ type: "CAPTURE_HISTORY" }), [dispatch]);
 
   const undo = useCallback(() => dispatch({ type: "UNDO" }), [dispatch]);
@@ -138,9 +208,29 @@ export function useEditorController(
   const toggleGrid = useCallback(() => dispatch({ type: "TOGGLE_GRID" }), [dispatch]);
   const togglePreview = useCallback(() => dispatch({ type: "TOGGLE_PREVIEW" }), [dispatch]);
 
-  const exportJson = useCallback(
-    () => exportEditorJson(state.elements, state.selectedId),
-    [state.elements, state.selectedId]
+  const exportJson = useCallback(() => {
+    exportEditorJson(state.elements, state.selectedId);
+    setTimedStatus({ tone: "success", text: "JSON export vytvořen" });
+  }, [setTimedStatus, state.elements, state.selectedId]);
+
+  const importJson = useCallback(
+    async (file: File) => {
+      try {
+        const document = await importEditorJson(file);
+        dispatch({
+          type: "LOAD_DOCUMENT",
+          elements: document.elements,
+          selectedId: document.selectedId,
+          savedAt: document.savedAt,
+        });
+        saveEditorDocument(document);
+        setTimedStatus({ tone: "success", text: "JSON import hotový" });
+      } catch (error) {
+        console.warn("Import JSON failed", error);
+        setTimedStatus({ tone: "error", text: "Import selhal: neplatný JSON dokument" });
+      }
+    },
+    [dispatch, setTimedStatus]
   );
 
   const save = useCallback(() => {
@@ -148,18 +238,31 @@ export function useEditorController(
 
     saveEditorDocument({
       version: 1,
+      name: "ERP Wireframe",
       elements: state.elements,
       selectedId: state.selectedId,
       savedAt,
     });
 
     dispatch({ type: "MARK_SAVED", savedAt });
-  }, [dispatch, state.elements, state.selectedId]);
+    setTimedStatus({ tone: "success", text: "Uloženo" });
+  }, [dispatch, setTimedStatus, state.elements, state.selectedId]);
 
-  const reset = useCallback(
-    () => dispatch({ type: "RESET", elements: createElementsFromTemplate("erpList") }),
-    [dispatch]
-  );
+  const reset = useCallback(() => {
+    const elements = createElementsFromTemplate("erpList");
+    const savedAt = new Date().toISOString();
+
+    dispatch({ type: "RESET", elements });
+    saveEditorDocument({
+      version: 1,
+      name: "ERP Wireframe",
+      elements,
+      selectedId: null,
+      savedAt,
+    });
+    dispatch({ type: "MARK_SAVED", savedAt });
+    setTimedStatus({ tone: "success", text: "Reset hotový" });
+  }, [dispatch, setTimedStatus]);
 
   const actions = useMemo<EditorActions>(
     () => ({
@@ -171,6 +274,9 @@ export function useEditorController(
       updateElementProps,
       deleteElement,
       deleteSelectedElement,
+      duplicateSelectedElement,
+      nudgeSelectedElement,
+      alignSelectedElement,
       captureHistory,
       undo,
       redo,
@@ -180,17 +286,22 @@ export function useEditorController(
       toggleGrid,
       togglePreview,
       exportJson,
+      importJson,
       save,
       reset,
     }),
     [
+      alignSelectedElement,
       addPaletteItem,
       applyTemplate,
       captureHistory,
       clearSelection,
       deleteElement,
       deleteSelectedElement,
+      duplicateSelectedElement,
       exportJson,
+      importJson,
+      nudgeSelectedElement,
       redo,
       reset,
       save,
@@ -213,6 +324,7 @@ export function useEditorController(
     canRedo,
     paletteGroups: PALETTE_GROUPS,
     templates: TEMPLATE_DEFINITIONS,
+    statusMessage,
     actions,
   };
 }

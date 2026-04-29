@@ -1,4 +1,5 @@
 import type { CanvasElement } from "../../domain/canvas/canvas.types";
+import { sanitizeNumberInput } from "../../domain/canvas/geometry.helpers";
 
 type GeometryPatch = Pick<Partial<CanvasElement>, "x" | "y" | "w" | "h">;
 
@@ -25,7 +26,9 @@ export function GeometryFields({ element, onChange }: GeometryFieldsProps) {
           <input
             type="number"
             value={element[key]}
-            onChange={(event) => onChange(createGeometryPatch(key, Number(event.target.value)))}
+            onChange={(event) =>
+              onChange(createGeometryPatch(key, sanitizeNumberInput(event.target.value, element[key])))
+            }
             className="w-full rounded-xl border border-slate-200 px-3 py-2 outline-none focus:border-slate-900"
           />
         </label>

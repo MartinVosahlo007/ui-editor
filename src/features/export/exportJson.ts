@@ -1,22 +1,17 @@
 import type { CanvasElement, CanvasElementId } from "../../domain/canvas/canvas.types";
+import type { EditorDocument } from "../../domain/document/document.types";
 import { downloadTextFile } from "./downloadFile";
-
-export interface EditorExportDocument {
-  version: 1;
-  elements: CanvasElement[];
-  selectedId: CanvasElementId | null;
-  exportedAt: string;
-}
 
 export function createExportDocument(
   elements: CanvasElement[],
   selectedId: CanvasElementId | null
-): EditorExportDocument {
+): EditorDocument {
   return {
     version: 1,
+    name: "ERP Wireframe",
     elements,
     selectedId,
-    exportedAt: new Date().toISOString(),
+    savedAt: new Date().toISOString(),
   };
 }
 

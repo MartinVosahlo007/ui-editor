@@ -1,5 +1,6 @@
 import { DEFAULT_ELEMENT_PROPS } from "./canvas.constants";
 import { createId } from "./canvas.helpers";
+import { clampElementGeometry } from "./geometry.helpers";
 import type { CanvasElement } from "./canvas.types";
 import type { PaletteItem } from "../palette/palette.types";
 
@@ -19,4 +20,14 @@ export function createElementFromPaletteItem(
     h: item.h,
     props: { ...DEFAULT_ELEMENT_PROPS },
   };
+}
+
+export function duplicateElement(element: CanvasElement): CanvasElement {
+  return clampElementGeometry({
+    ...element,
+    id: createId(),
+    x: element.x + 16,
+    y: element.y + 16,
+    props: { ...element.props },
+  });
 }

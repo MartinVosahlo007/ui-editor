@@ -1,9 +1,12 @@
 import { useEffect } from "react";
+import { GRID_SNAP } from "../../domain/canvas/canvas.constants";
 
 export interface KeyboardShortcutActions {
   undo: () => void;
   redo: () => void;
   deleteSelectedElement: () => void;
+  duplicateSelectedElement: () => void;
+  nudgeSelectedElement: (deltaX: number, deltaY: number) => void;
 }
 
 interface UseKeyboardShortcutsOptions {
@@ -40,6 +43,29 @@ export function useKeyboardShortcuts({ enabled, actions }: UseKeyboardShortcutsO
         event.preventDefault();
         actions.redo();
         return;
+      }
+
+      if (modifierPressed && event.key.toLowerCase() === "d") {
+        event.preventDefault();
+        actions.duplicateSelectedElement();
+        return;
+      }
+
+      if (event.key.startsWith("Arrow")) {
+        const amount = event.shiftKey ? 16 : GRID_SNAP;
+        const deltaByKey: Record<string, [number, number]> = {
+          ArrowLeft: [-amount, 0],
+          ArrowRight: [amount, 0],
+          ArrowUp: [0, -amount],
+          ArrowDown: [0, amount],
+        };
+        const delta = deltaByKey[event.key];
+
+        if (delta) {
+          event.preventDefault();
+          actions.nudgeSelectedElement(delta[0], delta[1]);
+          return;
+        }
       }
 
       if (event.key === "Delete" || event.key === "Backspace") {
