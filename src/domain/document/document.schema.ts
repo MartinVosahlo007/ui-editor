@@ -44,7 +44,7 @@ const canvasElementPropsSchema = z.object({
   batchEdit: z.boolean(),
 });
 
-export const canvasElementSchema = z.object({
+const canvasElementSchema = z.object({
   id: z.string().min(1),
   type: componentKindSchema,
   label: z.string(),

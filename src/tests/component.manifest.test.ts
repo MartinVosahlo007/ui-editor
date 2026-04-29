@@ -10,7 +10,7 @@ describe("component manifest", () => {
       const definition = COMPONENT_DEFINITIONS.find((component) => component.type === kind);
 
       expect(definition).toBeDefined();
-      expect(definition?.PreviewComponent).toBeTypeOf("function");
+      expect(definition?.previewKey).toBeDefined();
     }
   });
 

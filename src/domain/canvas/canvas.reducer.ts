@@ -178,11 +178,17 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
         showGrid: !state.showGrid,
       };
 
-    case "TOGGLE_PREVIEW":
+    case "ENTER_PREVIEW":
       return {
         ...state,
-        preview: !state.preview,
-        selectedId: state.preview ? state.selectedId : null,
+        preview: true,
+        selectedId: null,
+      };
+
+    case "EXIT_PREVIEW":
+      return {
+        ...state,
+        preview: false,
       };
 
     case "MARK_SAVED":

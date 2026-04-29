@@ -68,7 +68,8 @@ export type EditorAction =
   | { type: "REDO" }
   | { type: "SET_ZOOM"; zoom: number }
   | { type: "TOGGLE_GRID" }
-  | { type: "TOGGLE_PREVIEW" }
+  | { type: "ENTER_PREVIEW" }
+  | { type: "EXIT_PREVIEW" }
   | { type: "MARK_SAVED"; savedAt: string }
   | { type: "LOAD_DOCUMENT"; elements: CanvasElement[]; selectedId?: CanvasElementId | null; savedAt?: string | null }
   | { type: "RESET"; elements: CanvasElement[] };

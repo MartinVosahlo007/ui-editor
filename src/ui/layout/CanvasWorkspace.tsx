@@ -1,5 +1,5 @@
 import type { CanvasElement, CanvasElementId } from "../../domain/canvas/canvas.types";
-import type { AlignCommand } from "../../features/editor/useEditorController";
+import type { AlignCommand } from "../../domain/canvas/canvas.commands";
 import { Button } from "../shared/Button";
 import { Icon } from "../shared/Icon";
 import { Canvas } from "../canvas/Canvas";

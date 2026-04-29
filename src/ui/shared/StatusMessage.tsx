@@ -1,9 +1,4 @@
-export type StatusTone = "info" | "success" | "error";
-
-export interface StatusMessageValue {
-  tone: StatusTone;
-  text: string;
-}
+import type { StatusMessageValue, StatusTone } from "../../shared/status.types";
 
 interface StatusMessageProps {
   message: StatusMessageValue | null;

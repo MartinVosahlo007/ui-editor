@@ -1,7 +1,12 @@
-export function migrateEditorDocument(input: unknown): unknown {
-  if (!input || typeof input !== "object") return input;
+import { z } from "zod";
 
-  const record = input as Record<string, unknown>;
+const objectRecordSchema = z.record(z.string(), z.unknown());
+
+export function migrateEditorDocument(input: unknown): unknown {
+  const result = objectRecordSchema.safeParse(input);
+  if (!result.success) return input;
+
+  const record = result.data;
 
   if (record.version === 1) {
     return {

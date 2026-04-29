@@ -1,12 +1,7 @@
 import type { ComponentKind } from "../components/component.types";
+import type { IconName } from "../../shared/icons";
 
-export type PaletteIconName =
-  | "grid"
-  | "table"
-  | "filter"
-  | "workflow"
-  | "settings"
-  | "dashboard";
+export type PaletteIconName = IconName;
 
 export interface PaletteItem {
   type: ComponentKind;

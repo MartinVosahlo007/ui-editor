@@ -1,7 +1,8 @@
 import { useRef, type ChangeEvent } from "react";
 import { Button } from "../shared/Button";
 import { Icon } from "../shared/Icon";
-import { StatusMessage, type StatusMessageValue } from "../shared/StatusMessage";
+import { StatusMessage } from "../shared/StatusMessage";
+import type { StatusMessageValue } from "../../shared/status.types";
 
 interface HeaderBarProps {
   canUndo: boolean;

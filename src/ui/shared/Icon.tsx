@@ -1,4 +1,4 @@
-import { iconPaths, type IconName } from "./icons";
+import { iconPaths, isIconName, type IconName } from "./icons";
 
 interface IconProps {
   name: IconName | string;
@@ -7,7 +7,12 @@ interface IconProps {
 }
 
 export function Icon({ name, size = 16, className = "" }: IconProps) {
-  const path = iconPaths[name as IconName] ?? iconPaths.boxes;
+  const iconName = isIconName(name) ? name : "boxes";
+  if (iconName === "boxes" && name !== "boxes") {
+    console.warn(`Unknown icon "${name}", falling back to boxes.`);
+  }
+
+  const path = iconPaths[iconName];
 
   return (
     <svg
